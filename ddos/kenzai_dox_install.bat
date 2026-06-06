@@ -1,23 +1,23 @@
 @echo off
-title KENZAI OUTILS v3.1 - Installateur
+title KENZAI DOX TOOLS - Installer
 color 0c
 echo ========================================
-echo    KENZAI DDOS + DOX OUTILS v3.1
-echo    Tout en francais - Tape 12 pour DDOS
+echo    KENZAI DOX TOOLS v1.0
+echo    OSINT - Recherche d'informations
 echo ========================================
 echo.
 
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo [*] Python non trouve. Telechargement...
+    echo [*] Installation de Python...
     powershell -Command "Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.12.0/python-3.12.0.exe' -OutFile '%%temp%%\python.exe'"
     start /wait %%temp%%\python.exe /quiet InstallAllUsers=1 PrependPath=1
     del %%temp%%\python.exe
 )
 
 echo [*] Installation des modules...
-pip install requests colorama dnspython >nul
+pip install requests colorama beautifulsoup4 phonenumbers dnspython >nul
 
-echo [*] Lancement de KENZAI OUTILS...
-python kenzai_fr.py
+echo [*] Lancement...
+python kenzai_dox.py
 pause
