@@ -9,6 +9,7 @@ import socket
 import threading
 import requests
 import subprocess
+import webbrowser
 from colorama import Fore, Style, init
 
 init(autoreset=True)
@@ -16,6 +17,10 @@ os.system('title KENZAI TOOLS v12.0')
 os.system('mode con: cols=90 lines=35')
 
 stop_attack = False
+
+# ============ LIEN DISCORD ============
+DISCORD_INVITE = "https://discord.gg/pVskVJybc"
+# =====================================
 
 def clear():
     os.system('cls')
@@ -43,6 +48,10 @@ def menu():
 {Fore.RED}[13] SCAN PORTS      [14] BUILDER PANEL  [15] Exit{Style.RESET_ALL}
 
 {Fore.RED}kenzai@tools:~/{Style.RESET_ALL} """, end="")
+
+def open_discord():
+    """Ouvre le serveur Discord"""
+    webbrowser.open(DISCORD_INVITE)
 
 def ip_locator():
     clear()
@@ -177,10 +186,9 @@ def scan_ports():
     input()
 
 def open_builder_panel():
-    """Ouvre le panel Builder"""
     clear()
     print(f"{Fore.YELLOW}[*] Lancement du Builder Panel...{Style.RESET_ALL}")
-    builder_file = "kenzai_builder.py"
+    builder_file = os.path.join("builder", "kenzai_builder.py")
     if not os.path.exists(builder_file):
         print(f"{Fore.RED}[!] Fichier {builder_file} introuvable{Style.RESET_ALL}")
         input()
@@ -193,6 +201,8 @@ def open_builder_panel():
     input()
 
 def main():
+    open_discord()  # Ouvre ton serveur Discord
+    
     while True:
         clear()
         banner()
