@@ -1,9 +1,9 @@
 @echo off
-title KENZAI TOOLS - Installer
+title KENZAI TOOLS v2.0 - Installer
 color 0c
 echo ========================================
-echo    KENZAI TOOLS v12.0
-echo    Installation et lancement du menu
+echo    KENZAI TOOLS v2.0
+echo    DOX + DDOS + TOKEN GRABBER
 echo ========================================
 echo.
 

